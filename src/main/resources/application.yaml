@@ -1,3 +1,12 @@
 spring:
   application:
     name: trading-execution-engine
+  datasource:
+    url: jdbc:postgresql://db.ounknxatuppuztklyvyn.supabase.co:5432/postgres?sslmode=require
+    username: postgres
+    password: S@tgurukunj121
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
