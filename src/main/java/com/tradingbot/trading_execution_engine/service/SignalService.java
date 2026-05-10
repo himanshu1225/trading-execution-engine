@@ -14,6 +14,8 @@ public class SignalService {
 
     private final SignalRepository signalRepository;
 
+    private final ValidationService validationService;
+
     public void processAlert(TradingViewAlert alert) {
 
         Signal signal = new Signal();
@@ -25,10 +27,16 @@ public class SignalService {
         signal.setZoneLow(alert.getZoneLow());
         signal.setSetupType(alert.getSetupType());
 
-        signal.setStatus("RECEIVED");
 
         signal.setAlertTime(LocalDateTime.now());
+        boolean valid =
+                validationService.validateEntry(alert);
 
+        if (valid) {
+            signal.setStatus("VALIDATED");
+        } else {
+            signal.setStatus("REJECTED");
+        }
         signalRepository.save(signal);
     }
 }
