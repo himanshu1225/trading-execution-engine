@@ -10,7 +10,7 @@ public class MarketDataClient {
         // MOCK DATA FOR NOW
 
         if ("RELIANCE".equalsIgnoreCase(symbol)) {
-            return 230.0;
+            return 220.0;
         }
 
         return 0.0;
