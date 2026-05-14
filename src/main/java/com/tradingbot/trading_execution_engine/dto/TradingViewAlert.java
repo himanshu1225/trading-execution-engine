@@ -9,13 +9,23 @@ public class TradingViewAlert {
 
     private String symbol;
 
+    private String symbolDesc;
+
+    private Double alertPrice;
+
     private Double entryPrice;
 
-    private Double stopLoss;
+    private Double stopLossPrice;
 
-    private Double zoneHigh;
+    private Double locZoneHigh;
 
-    private Double zoneLow;
+    private Double locZoneLow;
 
-    private String setupType;
+    private String tradeType;
+
+    private Integer tradeScore;
+
+    private String sector;
+
+    private String alertDateTimeStamp;
 }
