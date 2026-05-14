@@ -1,5 +1,6 @@
 package com.tradingbot.trading_execution_engine.service;
 
+import com.tradingbot.trading_execution_engine.decision.TradeDecision;
 import com.tradingbot.trading_execution_engine.dto.TradingViewAlert;
 import com.tradingbot.trading_execution_engine.entity.Signal;
 import com.tradingbot.trading_execution_engine.repository.SignalRepository;
@@ -15,45 +16,56 @@ import java.time.LocalDateTime;
 public class SignalService {
 
     private final SignalRepository signalRepository;
-    private final ValidationService validationService;
+    private final TradeDecisionEngine tradeDecisionEngine;
     private final ExecutionService executionService;
 
     public void processAlert(TradingViewAlert alert) {
 
-        log.info("Received TradingView alert for symbol={}, tradeType={}, tradeScore={}",
+        log.info(
+                "Received TradingView alert for symbol={}, tradeType={}, tradeScore={}",
                 alert.getSymbol(),
                 alert.getTradeType(),
-                alert.getTradeScore());
+                alert.getTradeScore()
+        );
 
-        boolean valid = validationService.validateEntry(alert);
+        TradeDecision decision =
+                tradeDecisionEngine.evaluate(alert);
 
-        Signal signal = buildSignal(alert, valid);
+        Signal signal =
+                buildSignal(alert, decision);
 
-        Signal savedSignal = signalRepository.save(signal);
+        Signal savedSignal =
+                signalRepository.save(signal);
 
-        log.info("Signal persisted with id={} and status={}",
+        log.info(
+                "Signal persisted with id={}, status={}, reason={}",
                 savedSignal.getId(),
-                savedSignal.getStatus());
+                savedSignal.getStatus(),
+                savedSignal.getDecisionReason()
+        );
 
-        if ("VALIDATED".equals(savedSignal.getStatus())) {
+        if (decision.isValid()) {
             try {
-                executionService.execute(savedSignal);
+                executionService.execute(savedSignal, decision);
 
-                log.info("Execution triggered for signalId={}",
-                        savedSignal.getId());
+                log.info(
+                        "Execution triggered for signalId={}",
+                        savedSignal.getId()
+                );
 
             } catch (Exception e) {
-                log.error("Execution failed for signalId={}",
+                log.error(
+                        "Execution failed for signalId={}",
                         savedSignal.getId(),
-                        e);
+                        e
+                );
             }
-        } else {
-            log.info("Signal rejected for symbol={}",
-                    savedSignal.getSymbol());
         }
     }
 
-    private Signal buildSignal(TradingViewAlert alert, boolean valid) {
+    private Signal buildSignal(
+            TradingViewAlert alert,
+            TradeDecision decision) {
 
         Signal signal = new Signal();
 
@@ -69,9 +81,25 @@ public class SignalService {
         signal.setSector(alert.getSector());
         signal.setAlertDateTimeStamp(alert.getAlertDateTimeStamp());
 
-        signal.setCreatedAt(LocalDateTime.now());
+        signal.setActualEntryPrice(
+                decision.getActualEntryPrice()
+        );
 
-        signal.setStatus(valid ? "VALIDATED" : "REJECTED");
+        signal.setQuantity(
+                decision.getQuantity()
+        );
+
+        signal.setDecisionReason(
+                decision.getDecisionReason()
+        );
+
+        signal.setStatus(
+                decision.isValid()
+                        ? "VALIDATED"
+                        : "REJECTED"
+        );
+
+        signal.setCreatedAt(LocalDateTime.now());
 
         return signal;
     }

@@ -10,3 +10,8 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+trading:
+  capital: 100000
+  risk-percent: 1
+  threshold-percent: 1

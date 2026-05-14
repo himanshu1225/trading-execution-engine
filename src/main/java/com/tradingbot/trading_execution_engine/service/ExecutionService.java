@@ -1,5 +1,6 @@
 package com.tradingbot.trading_execution_engine.service;
 
+import com.tradingbot.trading_execution_engine.decision.TradeDecision;
 import com.tradingbot.trading_execution_engine.entity.Order;
 import com.tradingbot.trading_execution_engine.entity.Signal;
 import com.tradingbot.trading_execution_engine.integration.BrokerClient;
@@ -16,23 +17,38 @@ public class ExecutionService {
     private final BrokerClient brokerClient;
     private final OrderRepository orderRepository;
 
-    public void execute(Signal signal) {
+    public void execute(
+            Signal signal,
+            TradeDecision decision) {
 
-        String brokerOrderId =
-                brokerClient.placeLimitOrder(
-                        signal.getSymbol(),
-                        signal.getEntryPrice(),
-                        10
-                );
+        String brokerOrderId;
+
+        if ("MARKET".equals(decision.getActionType())) {
+
+            brokerOrderId =
+                    brokerClient.placeMarketOrder(
+                            signal.getSymbol(),
+                            decision.getQuantity()
+                    );
+
+        } else {
+
+            brokerOrderId =
+                    brokerClient.placeLimitOrder(
+                            signal.getSymbol(),
+                            decision.getActualEntryPrice(),
+                            decision.getQuantity()
+                    );
+        }
 
         Order order = new Order();
 
         order.setBrokerOrderId(brokerOrderId);
         order.setSymbol(signal.getSymbol());
-        order.setOrderPrice(signal.getEntryPrice());
-        order.setQuantity(10);
-        order.setOrderType("LIMIT");
-        order.setOrderStatus("PLACED");
+        order.setOrderPrice(decision.getActualEntryPrice());
+        order.setQuantity(decision.getQuantity());
+        order.setOrderType(decision.getActionType());
+        order.setOrderStatus("PENDING");
         order.setCreatedAt(LocalDateTime.now());
         order.setSignal(signal);
 

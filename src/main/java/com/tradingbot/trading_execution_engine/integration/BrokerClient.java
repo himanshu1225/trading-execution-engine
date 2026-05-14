@@ -12,6 +12,13 @@ public class BrokerClient {
             Double price,
             Integer quantity) {
 
-        return "MOCK-" + UUID.randomUUID();
+        return "LIMIT-" + UUID.randomUUID();
+    }
+
+    public String placeMarketOrder(
+            String symbol,
+            Integer quantity) {
+
+        return "MARKET-" + UUID.randomUUID();
     }
 }
