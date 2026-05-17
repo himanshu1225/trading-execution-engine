@@ -21,4 +21,11 @@ public class BrokerClient {
 
         return "MARKET-" + UUID.randomUUID();
     }
+
+    public String getOrderStatus(String brokerOrderId) {
+
+        // MOCK for testing
+
+        return "EXPIRED";
+    }
 }

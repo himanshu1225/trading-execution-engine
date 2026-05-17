@@ -59,4 +59,28 @@ public class ExecutionService {
 
         orderRepository.save(order);
     }
+
+    public void recreateLimitOrder(Signal signal) {
+
+        String brokerOrderId =
+                brokerClient.placeLimitOrder(
+                        signal.getSymbol(),
+                        signal.getEntryPrice(),
+                        signal.getQuantity()
+                );
+
+        Order order = new Order();
+
+        order.setBrokerOrderId(brokerOrderId);
+        order.setSymbol(signal.getSymbol());
+        order.setOrderPrice(signal.getEntryPrice());
+        order.setQuantity(signal.getQuantity());
+        order.setOrderType("LIMIT");
+        order.setOrderStatus("PENDING");
+        order.setCreatedAt(LocalDateTime.now());
+        order.setPlacedAt(LocalDateTime.now());
+        order.setSignal(signal);
+
+        orderRepository.save(order);
+    }
 }

@@ -20,8 +20,8 @@ public class MarketDataService {
                         alertTimestamp.plusMinutes(1),
                         125.0,
                         126.0,
-                        119.0,
-                        124.0
+                        121.0,
+                        122.0
                 )
         );
     }
