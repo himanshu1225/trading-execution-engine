@@ -12,6 +12,6 @@ spring:
     show-sql: true
 
 trading:
-  capital: 100000
+  capital: 500000
   risk-percent: 1
   threshold-percent: 1

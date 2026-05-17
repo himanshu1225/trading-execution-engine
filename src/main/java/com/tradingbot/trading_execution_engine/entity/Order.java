@@ -30,6 +30,12 @@ public class Order {
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime placedAt;
+
+    private LocalDateTime filledAt;
+
+    private LocalDateTime cancelledAt;
+
     @ManyToOne
     @JoinColumn(name = "signal_id")
     private Signal signal;

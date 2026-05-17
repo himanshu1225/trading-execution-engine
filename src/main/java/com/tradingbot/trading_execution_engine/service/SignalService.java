@@ -93,11 +93,15 @@ public class SignalService {
                 decision.getDecisionReason()
         );
 
-        signal.setStatus(
-                decision.isValid()
-                        ? "VALIDATED"
-                        : "REJECTED"
-        );
+        if (!decision.isValid()) {
+            signal.setStatus("REJECTED");
+
+        } else if ("MARKET".equals(decision.getActionType())) {
+            signal.setStatus("MARKET_EXECUTED");
+
+        } else if ("LIMIT".equals(decision.getActionType())) {
+            signal.setStatus("PENDING_LIMIT");
+        }
 
         signal.setCreatedAt(LocalDateTime.now());
 

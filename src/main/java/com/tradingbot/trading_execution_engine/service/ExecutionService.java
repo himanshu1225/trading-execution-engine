@@ -48,8 +48,13 @@ public class ExecutionService {
         order.setOrderPrice(decision.getActualEntryPrice());
         order.setQuantity(decision.getQuantity());
         order.setOrderType(decision.getActionType());
-        order.setOrderStatus("PENDING");
+        if ("MARKET".equals(decision.getActionType())) {
+            order.setOrderStatus("PLACED");
+        } else {
+            order.setOrderStatus("PENDING");
+        }
         order.setCreatedAt(LocalDateTime.now());
+        order.setPlacedAt(LocalDateTime.now());
         order.setSignal(signal);
 
         orderRepository.save(order);

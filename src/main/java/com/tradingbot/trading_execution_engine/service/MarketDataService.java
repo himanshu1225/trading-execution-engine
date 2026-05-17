@@ -20,22 +20,8 @@ public class MarketDataService {
                         alertTimestamp.plusMinutes(1),
                         125.0,
                         126.0,
-                        121.0,
-                        122.0
-                ),
-                new Candle(
-                        alertTimestamp.plusMinutes(2),
-                        122.0,
-                        123.0,
                         119.0,
-                        121.0
-                ),
-                new Candle(
-                        alertTimestamp.plusMinutes(3),
-                        121.0,
-                        121.5,
-                        120.0,
-                        121.0
+                        124.0
                 )
         );
     }
