@@ -15,3 +15,11 @@ trading:
   capital: 500000
   risk-percent: 1
   threshold-percent: 1
+
+dhan:
+  base-url: https://api.dhan.co/v2
+  access-token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJkaGFuIiwicGFydG5lcklkIjoiIiwiZXhwIjoxNzc5MTEyMDI4LCJpYXQiOjE3NzkwMjU2MjgsInRva2VuQ29uc3VtZXJUeXBlIjoiU0VMRiIsIndlYmhvb2tVcmwiOiIiLCJkaGFuQ2xpZW50SWQiOiIxMTAwOTQyODQ0In0.WGpA6o4ly8oBbdCXsNwwrpqZG4TQ_EgUrF-FV1HjbuMLIOGQ1-5EzQ0sgnLTpG1evbkdsvBUNn9mSTbR38qcjQ
+
+upstox:
+  base-url: https://api.upstox.com
+  access-token: eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiI4MDUzMDYiLCJqdGkiOiI2YTA5ZGJlNjY5YjlkYzU5MDk1ODg4MjgiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNQbHVzUGxhbiI6ZmFsc2UsImlzRXh0ZW5kZWQiOnRydWUsImlhdCI6MTc3OTAzMTAxNCwiaXNzIjoidWRhcGktZ2F0ZXdheS1zZXJ2aWNlIiwiZXhwIjoxODEwNTkxMjAwfQ.-0kNWpiLoeMAgJVTLjUO-O_-yD3-ugJbVrrivhxBlJI

@@ -28,6 +28,22 @@ public class SignalService {
                 alert.getTradeScore()
         );
 
+        boolean duplicate =
+                signalRepository
+                        .existsBySymbolAndEntryPriceAndStopLossPriceAndTradeTypeAndAlertDateTimeStamp(
+                                alert.getSymbol(),
+                                alert.getEntryPrice(),
+                                alert.getStopLossPrice(),
+                                alert.getTradeType(),
+                                alert.getAlertDateTimeStamp()
+                        );
+
+        if (duplicate) {
+            log.warn("Duplicate alert ignored for symbol={}",
+                    alert.getSymbol());
+            return;
+        }
+
         TradeDecision decision =
                 tradeDecisionEngine.evaluate(alert);
 
