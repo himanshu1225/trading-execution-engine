@@ -18,7 +18,14 @@ trading:
 
 dhan:
   base-url: https://api.dhan.co/v2
+  client-id: 1100942844
   access-token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJkaGFuIiwicGFydG5lcklkIjoiIiwiZXhwIjoxNzc5MTEyMDI4LCJpYXQiOjE3NzkwMjU2MjgsInRva2VuQ29uc3VtZXJUeXBlIjoiU0VMRiIsIndlYmhvb2tVcmwiOiIiLCJkaGFuQ2xpZW50SWQiOiIxMTAwOTQyODQ0In0.WGpA6o4ly8oBbdCXsNwwrpqZG4TQ_EgUrF-FV1HjbuMLIOGQ1-5EzQ0sgnLTpG1evbkdsvBUNn9mSTbR38qcjQ
+  order:
+    product-type: INTRADAY
+    validity: DAY
+  forever:
+    product-type: CNC
+    validity: DAY
 
 upstox:
   base-url: https://api.upstox.com
