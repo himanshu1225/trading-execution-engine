@@ -46,8 +46,7 @@ public class UpstoxInstrumentResolverService {
         log.info("CACHE MISS for {}", normalizedSymbol);
 
         String url =
-                UriComponentsBuilder
-                        .fromHttpUrl(upstoxBaseUrl + "/v2/instruments/search")
+                UriComponentsBuilder.fromUriString(upstoxBaseUrl + "/v2/instruments/search")
                         .queryParam("query", normalizedSymbol)
                         .queryParam("exchanges", "NSE")
                         .queryParam("segments", "EQ")
