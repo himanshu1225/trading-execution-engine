@@ -5,6 +5,7 @@ import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanOrderStatusRe
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanPlaceOrderRequest;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanPlaceOrderResponse;
 import com.tradingbot.trading_execution_engine.broker.model.BrokerOrderStatus;
+import com.tradingbot.trading_execution_engine.broker.model.BrokerProductType;
 import com.tradingbot.trading_execution_engine.broker.model.OrderRequest;
 import com.tradingbot.trading_execution_engine.broker.model.OrderResponse;
 import com.tradingbot.trading_execution_engine.broker.model.OrderStatusResponse;
@@ -40,7 +41,10 @@ public class DhanBrokerOrderService implements BrokerOrderService {
                         .correlationId(correlationId("ORD"))
                         .transactionType(request.getSide().name())
                         .exchangeSegment(instrument.getExchangeSegment())
-                        .productType(properties.getOrderProductType())
+                        .productType(productTypeOrDefault(
+                                request.getProductType(),
+                                properties.getOrderProductType()
+                        ))
                         .orderType(toDhanOrderType(request.getOrderType()))
                         .validity(properties.getOrderValidity())
                         .securityId(instrument.getSecurityId())
@@ -79,7 +83,10 @@ public class DhanBrokerOrderService implements BrokerOrderService {
                         .orderFlag("SINGLE")
                         .transactionType(request.getSide().name())
                         .exchangeSegment(instrument.getExchangeSegment())
-                        .productType(properties.getForeverProductType())
+                        .productType(productTypeOrDefault(
+                                request.getProductType(),
+                                BrokerProductType.CNC.name()
+                        ))
                         .orderType("LIMIT")
                         .validity(properties.getForeverValidity())
                         .securityId(instrument.getSecurityId())
@@ -145,6 +152,17 @@ public class DhanBrokerOrderService implements BrokerOrderService {
         }
 
         return request.getPrice();
+    }
+
+    private String productTypeOrDefault(
+            BrokerProductType productType,
+            String defaultProductType) {
+
+        if (productType == null) {
+            return defaultProductType;
+        }
+
+        return productType.name();
     }
 
     private BrokerOrderStatus mapStatus(String dhanStatus) {

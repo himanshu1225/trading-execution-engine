@@ -15,7 +15,6 @@ import com.tradingbot.trading_execution_engine.persistence.repository.OrderRepos
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -32,13 +31,27 @@ class ExecutionServiceTest {
     @Mock
     private OrderRepository orderRepository;
 
-    @InjectMocks
     private ExecutionService executionService;
+
+    private final ExecutionProductResolver executionProductResolver =
+            new ExecutionProductResolver();
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        executionService =
+                new ExecutionService(
+                        brokerOrderService,
+                        orderRepository,
+                        executionProductResolver
+                );
+    }
 
     @Test
     void executePlacesLimitOrderAndPersistsPendingOrder() {
         Signal signal = new Signal();
         signal.setSymbol("RELIANCE");
+        signal.setTradeType("HIT");
+        signal.setAlertDateTimeStamp("22-05-2026 13:29:00");
 
         TradeDecision decision = TradeDecision.builder()
                 .valid(true)
@@ -63,6 +76,7 @@ class ExecutionServiceTest {
         assertThat(request.getSymbol()).isEqualTo("RELIANCE");
         assertThat(request.getSide()).isEqualTo(OrderSide.BUY);
         assertThat(request.getOrderType()).isEqualTo(OrderType.LIMIT);
+        assertThat(request.getProductType().name()).isEqualTo("INTRADAY");
         assertThat(request.getQuantity()).isEqualTo(10);
         assertThat(request.getPrice()).isEqualTo(2800.0);
 
@@ -74,6 +88,7 @@ class ExecutionServiceTest {
         assertThat(order.getBrokerOrderId()).isEqualTo("LIMIT-1");
         assertThat(order.getSymbol()).isEqualTo("RELIANCE");
         assertThat(order.getOrderType()).isEqualTo(OrderType.LIMIT.name());
+        assertThat(order.getProductType()).isEqualTo("INTRADAY");
         assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.PENDING.name());
         assertThat(order.getOrderPrice()).isEqualTo(2800.0);
         assertThat(order.getQuantity()).isEqualTo(10);
@@ -87,6 +102,8 @@ class ExecutionServiceTest {
         signal.setEntryPrice(3900.0);
         signal.setStopLossPrice(3850.0);
         signal.setQuantity(20);
+        signal.setTradeType("HIT");
+        signal.setAlertDateTimeStamp("22-05-2026 12:30:00");
 
         when(brokerOrderService.placePersistentOrder(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(OrderResponse.builder()
@@ -103,6 +120,7 @@ class ExecutionServiceTest {
         PersistentOrderRequest request = requestCaptor.getValue();
         assertThat(request.getSymbol()).isEqualTo("TCS");
         assertThat(request.getSide()).isEqualTo(OrderSide.BUY);
+        assertThat(request.getProductType().name()).isEqualTo("CNC");
         assertThat(request.getQuantity()).isEqualTo(20);
         assertThat(request.getTriggerPrice()).isEqualTo(3900.0);
         assertThat(request.getLimitPrice()).isEqualTo(3900.0);
@@ -115,6 +133,7 @@ class ExecutionServiceTest {
         Order order = orderCaptor.getValue();
         assertThat(order.getBrokerOrderId()).isEqualTo("GTT-1");
         assertThat(order.getOrderType()).isEqualTo(OrderType.PERSISTENT_LIMIT.name());
+        assertThat(order.getProductType()).isEqualTo("CNC");
         assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.FOREVER_ACTIVE.name());
         assertThat(order.getOrderPrice()).isEqualTo(3900.0);
         assertThat(order.getQuantity()).isEqualTo(20);

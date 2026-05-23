@@ -4,6 +4,7 @@ import com.tradingbot.trading_execution_engine.broker.model.BrokerOrderStatus;
 import com.tradingbot.trading_execution_engine.broker.model.OrderResponse;
 import com.tradingbot.trading_execution_engine.broker.model.OrderStatusResponse;
 import com.tradingbot.trading_execution_engine.broker.service.BrokerOrderService;
+import com.tradingbot.trading_execution_engine.execution.service.ExecutionProductResolver;
 import com.tradingbot.trading_execution_engine.execution.service.ExecutionService;
 import com.tradingbot.trading_execution_engine.order.model.OrderStatus;
 import com.tradingbot.trading_execution_engine.order.model.OrderType;
@@ -42,7 +43,11 @@ class OrderMonitorServiceTest {
     @BeforeEach
     void setUp() {
         ExecutionService executionService =
-                new ExecutionService(brokerOrderService, orderRepository);
+                new ExecutionService(
+                        brokerOrderService,
+                        orderRepository,
+                        new ExecutionProductResolver()
+                );
         orderMonitorService =
                 new OrderMonitorService(
                         orderRepository,
@@ -60,6 +65,8 @@ class OrderMonitorServiceTest {
         signal.setStopLossPrice(1475.0);
         signal.setQuantity(100);
         signal.setStatus(SignalStatus.PENDING_LIMIT.name());
+        signal.setTradeType("HIT");
+        signal.setAlertDateTimeStamp("22-05-2026 12:30:00");
 
         Order pendingOrder = new Order();
         pendingOrder.setId(1L);
@@ -94,6 +101,7 @@ class OrderMonitorServiceTest {
 
         assertThat(persistentOrder.getBrokerOrderId()).isEqualTo("GTT-1");
         assertThat(persistentOrder.getOrderType()).isEqualTo(OrderType.PERSISTENT_LIMIT.name());
+        assertThat(persistentOrder.getProductType()).isEqualTo("CNC");
         assertThat(persistentOrder.getOrderStatus()).isEqualTo(OrderStatus.FOREVER_ACTIVE.name());
         assertThat(persistentOrder.getOrderPrice()).isEqualTo(1500.0);
         assertThat(persistentOrder.getQuantity()).isEqualTo(100);

@@ -15,6 +15,8 @@ public class OrderRequest {
 
     private OrderType orderType;
 
+    private BrokerProductType productType;
+
     private Integer quantity;
 
     private Double price;

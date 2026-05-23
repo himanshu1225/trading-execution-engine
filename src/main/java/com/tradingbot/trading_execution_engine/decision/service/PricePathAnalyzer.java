@@ -59,7 +59,6 @@ public class PricePathAnalyzer {
                     candle.getLow(),
                     candle.getClose()
             );
-
             // stoploss broken anytime
             if (candle.getLow() <= stopLoss) {
                 stopLossBroken = true;

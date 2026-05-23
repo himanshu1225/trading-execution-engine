@@ -5,6 +5,7 @@ import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanOrderStatusRe
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanPlaceOrderRequest;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanPlaceOrderResponse;
 import com.tradingbot.trading_execution_engine.broker.model.BrokerOrderStatus;
+import com.tradingbot.trading_execution_engine.broker.model.BrokerProductType;
 import com.tradingbot.trading_execution_engine.broker.model.OrderRequest;
 import com.tradingbot.trading_execution_engine.broker.model.OrderResponse;
 import com.tradingbot.trading_execution_engine.broker.model.OrderStatusResponse;
@@ -70,6 +71,7 @@ class DhanBrokerOrderServiceTest {
                                 .symbol("RELIANCE")
                                 .side(OrderSide.BUY)
                                 .orderType(OrderType.MARKET)
+                                .productType(BrokerProductType.INTRADAY)
                                 .quantity(5)
                                 .price(2800.0)
                                 .build()
@@ -114,6 +116,7 @@ class DhanBrokerOrderServiceTest {
                         PersistentOrderRequest.builder()
                                 .symbol("TCS")
                                 .side(OrderSide.BUY)
+                                .productType(BrokerProductType.CNC)
                                 .quantity(3)
                                 .triggerPrice(3900.0)
                                 .limitPrice(3900.0)

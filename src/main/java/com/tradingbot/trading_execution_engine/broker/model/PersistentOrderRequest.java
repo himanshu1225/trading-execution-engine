@@ -12,6 +12,8 @@ public class PersistentOrderRequest {
 
     private OrderSide side;
 
+    private BrokerProductType productType;
+
     private Integer quantity;
 
     private Double triggerPrice;

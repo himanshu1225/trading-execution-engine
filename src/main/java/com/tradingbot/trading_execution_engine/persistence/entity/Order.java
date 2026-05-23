@@ -26,6 +26,8 @@ public class Order {
 
     private String orderType;
 
+    private String productType;
+
     private String orderStatus;
 
     private LocalDateTime createdAt;

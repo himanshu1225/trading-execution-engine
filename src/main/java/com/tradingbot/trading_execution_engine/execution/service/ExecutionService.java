@@ -1,6 +1,7 @@
 package com.tradingbot.trading_execution_engine.execution.service;
 
 import com.tradingbot.trading_execution_engine.broker.service.BrokerOrderService;
+import com.tradingbot.trading_execution_engine.broker.model.BrokerProductType;
 import com.tradingbot.trading_execution_engine.decision.model.TradeDecision;
 import com.tradingbot.trading_execution_engine.persistence.entity.Order;
 import com.tradingbot.trading_execution_engine.persistence.entity.Signal;
@@ -22,6 +23,7 @@ public class ExecutionService {
 
     private final BrokerOrderService brokerOrderService;
     private final OrderRepository orderRepository;
+    private final ExecutionProductResolver executionProductResolver;
 
     public void execute(
             Signal signal,
@@ -30,12 +32,16 @@ public class ExecutionService {
         OrderType orderType =
                 OrderType.valueOf(decision.getActionType());
 
+        BrokerProductType productType =
+                executionProductResolver.resolveForOrder(signal);
+
         OrderResponse response =
                 brokerOrderService.placeOrder(
                         OrderRequest.builder()
                                 .symbol(signal.getSymbol())
                                 .side(OrderSide.BUY)
                                 .orderType(orderType)
+                                .productType(productType)
                                 .quantity(decision.getQuantity())
                                 .price(decision.getActualEntryPrice())
                                 .build()
@@ -53,6 +59,7 @@ public class ExecutionService {
         order.setOrderPrice(decision.getActualEntryPrice());
         order.setQuantity(decision.getQuantity());
         order.setOrderType(orderType.name());
+        order.setProductType(productType.name());
         order.setOrderStatus(orderStatus.name());
         order.setCreatedAt(LocalDateTime.now());
         order.setPlacedAt(LocalDateTime.now());
@@ -63,11 +70,15 @@ public class ExecutionService {
 
     public void createPersistentLimitOrder(Signal signal) {
 
+        BrokerProductType productType =
+                executionProductResolver.resolveForPersistentOrder(signal);
+
         OrderResponse response =
                 brokerOrderService.placePersistentOrder(
                         PersistentOrderRequest.builder()
                                 .symbol(signal.getSymbol())
                                 .side(OrderSide.BUY)
+                                .productType(productType)
                                 .quantity(signal.getQuantity())
                                 .triggerPrice(signal.getEntryPrice())
                                 .limitPrice(signal.getEntryPrice())
@@ -82,6 +93,7 @@ public class ExecutionService {
         order.setOrderPrice(signal.getEntryPrice());
         order.setQuantity(signal.getQuantity());
         order.setOrderType(OrderType.PERSISTENT_LIMIT.name());
+        order.setProductType(productType.name());
         order.setOrderStatus(OrderStatus.FOREVER_ACTIVE.name());
         order.setCreatedAt(LocalDateTime.now());
         order.setPlacedAt(LocalDateTime.now());
