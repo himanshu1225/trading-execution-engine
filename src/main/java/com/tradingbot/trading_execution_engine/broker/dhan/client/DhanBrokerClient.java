@@ -2,6 +2,8 @@ package com.tradingbot.trading_execution_engine.broker.dhan.client;
 
 import com.tradingbot.trading_execution_engine.broker.dhan.config.DhanBrokerProperties;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanForeverOrderRequest;
+import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanMarginRequest;
+import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanMarginResponse;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanOrderStatusResponse;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanPlaceOrderRequest;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanPlaceOrderResponse;
@@ -145,6 +147,19 @@ public class DhanBrokerClient {
         }
 
         return Arrays.asList(response.getBody());
+    }
+
+    public DhanMarginResponse calculateMargin(DhanMarginRequest request) {
+        RequestEntity<DhanMarginRequest> entity =
+                RequestEntity
+                        .post(uri("/margincalculator"))
+                        .headers(this::applyHeaders)
+                        .body(request);
+
+        ResponseEntity<DhanMarginResponse> response =
+                restTemplate.exchange(entity, DhanMarginResponse.class);
+
+        return response.getBody();
     }
 
     private URI uri(String path) {

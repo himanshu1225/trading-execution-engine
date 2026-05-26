@@ -53,6 +53,20 @@ Check `orders`:
 - `target_price` is filled
 - `trailing_jump` is filled
 
+Before a Super Order is placed with the Dhan profile, the app calls Dhan margin calculator.
+
+Expected margin behavior:
+
+- `insufficientBalance = 0`: order placement continues
+- `insufficientBalance > 0`: signal is rejected before order placement
+- margin API failure: warning is logged and order placement continues
+
+If rejected due to funds:
+
+- no `orders` row should be created
+- signal `status = REJECTED`
+- signal `decision_reason` contains required margin, available balance, and shortfall
+
 Check `order_legs`:
 
 - one `ENTRY_LEG`

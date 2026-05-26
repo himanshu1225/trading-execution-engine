@@ -3,6 +3,7 @@ package com.tradingbot.trading_execution_engine.order.lifecycle;
 import com.tradingbot.trading_execution_engine.broker.model.BrokerOrderStatus;
 import com.tradingbot.trading_execution_engine.broker.model.OrderResponse;
 import com.tradingbot.trading_execution_engine.broker.model.OrderStatusResponse;
+import com.tradingbot.trading_execution_engine.broker.service.BrokerMarginService;
 import com.tradingbot.trading_execution_engine.broker.service.BrokerOrderService;
 import com.tradingbot.trading_execution_engine.execution.service.ExecutionProductResolver;
 import com.tradingbot.trading_execution_engine.execution.service.ExecutionService;
@@ -40,6 +41,9 @@ class OrderMonitorServiceTest {
     private BrokerOrderService brokerOrderService;
 
     @Mock
+    private BrokerMarginService brokerMarginService;
+
+    @Mock
     private OrderLegRepository orderLegRepository;
 
     private OrderMonitorService orderMonitorService;
@@ -49,8 +53,10 @@ class OrderMonitorServiceTest {
         ExecutionService executionService =
                 new ExecutionService(
                         brokerOrderService,
+                        brokerMarginService,
                         orderRepository,
                         orderLegRepository,
+                        signalRepository,
                         new ExecutionProductResolver()
                 );
         orderMonitorService =

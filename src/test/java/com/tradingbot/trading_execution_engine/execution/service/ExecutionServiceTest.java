@@ -1,21 +1,26 @@
 package com.tradingbot.trading_execution_engine.execution.service;
 
 import com.tradingbot.trading_execution_engine.broker.model.BrokerOrderStatus;
+import com.tradingbot.trading_execution_engine.broker.model.MarginCheckRequest;
+import com.tradingbot.trading_execution_engine.broker.model.MarginCheckResponse;
 import com.tradingbot.trading_execution_engine.broker.model.OrderResponse;
 import com.tradingbot.trading_execution_engine.broker.model.PersistentOrderRequest;
 import com.tradingbot.trading_execution_engine.broker.model.SuperOrderRequest;
 import com.tradingbot.trading_execution_engine.broker.model.SuperOrderLeg;
+import com.tradingbot.trading_execution_engine.broker.service.BrokerMarginService;
 import com.tradingbot.trading_execution_engine.broker.service.BrokerOrderService;
 import com.tradingbot.trading_execution_engine.decision.model.TradeDecision;
 import com.tradingbot.trading_execution_engine.order.model.OrderLegStatus;
 import com.tradingbot.trading_execution_engine.order.model.OrderSide;
 import com.tradingbot.trading_execution_engine.order.model.OrderStatus;
 import com.tradingbot.trading_execution_engine.order.model.OrderType;
+import com.tradingbot.trading_execution_engine.order.model.SignalStatus;
 import com.tradingbot.trading_execution_engine.persistence.entity.Order;
 import com.tradingbot.trading_execution_engine.persistence.entity.OrderLeg;
 import com.tradingbot.trading_execution_engine.persistence.entity.Signal;
 import com.tradingbot.trading_execution_engine.persistence.repository.OrderLegRepository;
 import com.tradingbot.trading_execution_engine.persistence.repository.OrderRepository;
+import com.tradingbot.trading_execution_engine.persistence.repository.SignalRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -24,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
 
@@ -34,10 +40,16 @@ class ExecutionServiceTest {
     private BrokerOrderService brokerOrderService;
 
     @Mock
+    private BrokerMarginService brokerMarginService;
+
+    @Mock
     private OrderRepository orderRepository;
 
     @Mock
     private OrderLegRepository orderLegRepository;
+
+    @Mock
+    private SignalRepository signalRepository;
 
     private ExecutionService executionService;
 
@@ -49,8 +61,10 @@ class ExecutionServiceTest {
         executionService =
                 new ExecutionService(
                         brokerOrderService,
+                        brokerMarginService,
                         orderRepository,
                         orderLegRepository,
+                        signalRepository,
                         executionProductResolver
                 );
     }
@@ -79,10 +93,27 @@ class ExecutionServiceTest {
                         .exchangeSegment("NSE_EQ")
                         .status(BrokerOrderStatus.PLACED)
                         .build());
+        when(brokerMarginService.checkMargin(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(MarginCheckResponse.builder()
+                        .totalMargin(28000.0)
+                        .availableBalance(50000.0)
+                        .insufficientBalance(0.0)
+                        .build());
         when(orderRepository.save(org.mockito.ArgumentMatchers.any()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         executionService.execute(signal, decision);
+
+        ArgumentCaptor<MarginCheckRequest> marginCaptor =
+                ArgumentCaptor.forClass(MarginCheckRequest.class);
+        verify(brokerMarginService).checkMargin(marginCaptor.capture());
+
+        MarginCheckRequest marginRequest = marginCaptor.getValue();
+        assertThat(marginRequest.getSymbol()).isEqualTo("RELIANCE");
+        assertThat(marginRequest.getSide()).isEqualTo(OrderSide.BUY);
+        assertThat(marginRequest.getProductType().name()).isEqualTo("INTRADAY");
+        assertThat(marginRequest.getQuantity()).isEqualTo(10);
+        assertThat(marginRequest.getPrice()).isEqualTo(2800.0);
 
         ArgumentCaptor<SuperOrderRequest> requestCaptor =
                 ArgumentCaptor.forClass(SuperOrderRequest.class);
@@ -135,6 +166,84 @@ class ExecutionServiceTest {
                     assertThat(leg.getLegStatus()).isEqualTo(OrderLegStatus.PENDING.name());
                     assertThat(leg.getOrder()).isSameAs(order);
                 });
+    }
+
+    @Test
+    void executeRejectsSignalAndDoesNotPlaceOrderWhenMarginIsInsufficient() {
+        Signal signal = new Signal();
+        signal.setId(1L);
+        signal.setSymbol("RELIANCE");
+        signal.setStopLossPrice(2770.0);
+        signal.setTradeType("HIT");
+        signal.setAlertDateTimeStamp("22-05-2026 13:29:00");
+
+        TradeDecision decision = TradeDecision.builder()
+                .valid(true)
+                .actionType(OrderType.LIMIT.name())
+                .actualEntryPrice(2800.0)
+                .quantity(10)
+                .targetPrice(2860.0)
+                .trailingJump(14.0)
+                .build();
+
+        when(brokerMarginService.checkMargin(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(MarginCheckResponse.builder()
+                        .totalMargin(28000.0)
+                        .availableBalance(25000.0)
+                        .insufficientBalance(3000.0)
+                        .build());
+
+        executionService.execute(signal, decision);
+
+        assertThat(signal.getStatus()).isEqualTo(SignalStatus.REJECTED.name());
+        assertThat(signal.getDecisionReason())
+                .contains("Insufficient funds for order")
+                .contains("shortfall=3000.0");
+
+        verify(signalRepository).save(signal);
+        verify(brokerOrderService, never())
+                .placeSuperOrder(org.mockito.ArgumentMatchers.any());
+        verify(orderRepository, never())
+                .save(org.mockito.ArgumentMatchers.any());
+        verify(orderLegRepository, never())
+                .save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void executeContinuesOrderPlacementWhenMarginCheckFails() {
+        Signal signal = new Signal();
+        signal.setSymbol("RELIANCE");
+        signal.setStopLossPrice(2770.0);
+        signal.setTradeType("HIT");
+        signal.setAlertDateTimeStamp("22-05-2026 13:29:00");
+
+        TradeDecision decision = TradeDecision.builder()
+                .valid(true)
+                .actionType(OrderType.LIMIT.name())
+                .actualEntryPrice(2800.0)
+                .quantity(10)
+                .targetPrice(2860.0)
+                .trailingJump(14.0)
+                .build();
+
+        when(brokerMarginService.checkMargin(org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new IllegalStateException("margin API down"));
+        when(brokerOrderService.placeSuperOrder(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(OrderResponse.builder()
+                        .brokerOrderId("SUPER-1")
+                        .securityId("2885")
+                        .exchangeSegment("NSE_EQ")
+                        .status(BrokerOrderStatus.PLACED)
+                        .build());
+        when(orderRepository.save(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        executionService.execute(signal, decision);
+
+        verify(brokerOrderService)
+                .placeSuperOrder(org.mockito.ArgumentMatchers.any());
+        verify(orderRepository)
+                .save(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
