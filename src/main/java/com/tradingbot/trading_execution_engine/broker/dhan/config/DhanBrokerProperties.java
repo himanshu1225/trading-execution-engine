@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Getter
 @Component
-@Profile("dhan")
+@Profile({"dhan", "dhan-marketdata"})
 public class DhanBrokerProperties {
 
     @Value("${dhan.base-url}")

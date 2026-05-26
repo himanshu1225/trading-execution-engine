@@ -12,6 +12,18 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dhan
 
 Use the default profile for mock broker execution.
 
+To test Dhan market data instead of Upstox:
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=dhan,dhan-marketdata
+```
+
+With `dhan-marketdata` enabled:
+
+- candles come from Dhan `POST /charts/intraday`
+- live price comes from Dhan `POST /marketfeed/ltp`
+- Upstox market-data service is disabled
+
 ## TradingView Alert Test
 
 Send a webhook alert with:

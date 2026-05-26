@@ -15,6 +15,27 @@ Current provider split:
 - Market data: Upstox
 - Broker execution: Mock by default, Dhan when the `dhan` profile is active
 
+Optional Dhan market-data mode:
+
+```text
+dhan-marketdata profile
+ -> MarketDataService uses Dhan
+ -> UpstoxMarketDataService is disabled
+```
+
+Run examples:
+
+```bash
+# Dhan broker execution, Upstox market data
+mvn spring-boot:run -Dspring-boot.run.profiles=dhan
+
+# Dhan broker execution, Dhan market data
+mvn spring-boot:run -Dspring-boot.run.profiles=dhan,dhan-marketdata
+
+# Mock broker execution, Dhan market data
+mvn spring-boot:run -Dspring-boot.run.profiles=dhan-marketdata
+```
+
 ## Dhan Package Layout
 
 ```text
@@ -85,6 +106,54 @@ Implementations:
 
 - `MockBrokerMarginService`: always returns sufficient funds.
 - `DhanBrokerMarginService`: resolves Dhan instrument details and calls Dhan margin calculator.
+
+## Market Data Providers
+
+Market-data providers implement:
+
+```text
+MarketDataService.getCandlesAfterAlert(symbol, alertTimestamp)
+MarketDataService.getLivePrice(symbol)
+```
+
+Default provider:
+
+```text
+UpstoxMarketDataService
+```
+
+Dhan provider:
+
+```text
+DhanMarketDataService
+```
+
+Dhan market data uses:
+
+```http
+POST /charts/intraday
+POST /marketfeed/ltp
+```
+
+Dhan candle behavior matches the Upstox flow:
+
+- request 1-minute candles from one minute before alert timestamp
+- filter candles before alert minus one minute
+- sort candles by timestamp
+- return `Candle` objects for price-path analysis
+
+Dhan live price behavior:
+
+- resolve `symbol -> securityId + exchangeSegment`
+- call `/marketfeed/ltp`
+- return `last_price`
+
+Dhan market-data requires:
+
+- `dhan.base-url`
+- `dhan.access-token`
+- `dhan.client-id`
+- Dhan instrument resolver active through `dhan-marketdata`
 
 ## Super Order Lifecycle
 

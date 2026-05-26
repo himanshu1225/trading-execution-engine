@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
-@Profile("dhan")
+@Profile({"dhan", "dhan-marketdata"})
 @RequiredArgsConstructor
 @Slf4j
 public class DhanInstrumentResolverService {
