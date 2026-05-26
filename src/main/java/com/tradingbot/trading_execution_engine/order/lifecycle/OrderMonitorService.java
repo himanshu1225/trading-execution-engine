@@ -13,6 +13,7 @@ import com.tradingbot.trading_execution_engine.persistence.repository.SignalRepo
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,6 +28,7 @@ public class OrderMonitorService {
     private final BrokerOrderService brokerOrderService;
     private final ExecutionService executionService;
 
+    @Transactional
     public void monitorPendingOrders() {
 
         List<Order> pendingOrders =

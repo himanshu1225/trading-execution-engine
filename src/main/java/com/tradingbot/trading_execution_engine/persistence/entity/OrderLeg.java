@@ -7,10 +7,10 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "order_legs")
 @Getter
 @Setter
-public class Order {
+public class OrderLeg {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,37 +18,21 @@ public class Order {
 
     private String brokerOrderId;
 
-    private String symbol;
+    private String legName;
 
-    private String securityId;
+    private String legStatus;
 
-    private String exchangeSegment;
-
-    private Double orderPrice;
-
-    private Double stopLossPrice;
-
-    private Double targetPrice;
+    private Double price;
 
     private Double trailingJump;
 
     private Integer quantity;
 
-    private String orderType;
-
-    private String productType;
-
-    private String orderStatus;
-
     private LocalDateTime createdAt;
-
-    private LocalDateTime placedAt;
-
-    private LocalDateTime filledAt;
 
     private LocalDateTime cancelledAt;
 
     @ManyToOne
-    @JoinColumn(name = "signal_id")
-    private Signal signal;
+    @JoinColumn(name = "order_id")
+    private Order order;
 }

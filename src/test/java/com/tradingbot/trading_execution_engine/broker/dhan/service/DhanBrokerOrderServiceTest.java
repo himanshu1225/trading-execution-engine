@@ -1,15 +1,20 @@
-package com.tradingbot.trading_execution_engine.broker.dhan;
+package com.tradingbot.trading_execution_engine.broker.dhan.service;
 
+import com.tradingbot.trading_execution_engine.broker.dhan.client.DhanBrokerClient;
+import com.tradingbot.trading_execution_engine.broker.dhan.config.DhanBrokerProperties;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanForeverOrderRequest;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanOrderStatusResponse;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanPlaceOrderRequest;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanPlaceOrderResponse;
+import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanSuperOrderRequest;
 import com.tradingbot.trading_execution_engine.broker.model.BrokerOrderStatus;
 import com.tradingbot.trading_execution_engine.broker.model.BrokerProductType;
 import com.tradingbot.trading_execution_engine.broker.model.OrderRequest;
 import com.tradingbot.trading_execution_engine.broker.model.OrderResponse;
 import com.tradingbot.trading_execution_engine.broker.model.OrderStatusResponse;
 import com.tradingbot.trading_execution_engine.broker.model.PersistentOrderRequest;
+import com.tradingbot.trading_execution_engine.broker.model.SuperOrderRequest;
+import com.tradingbot.trading_execution_engine.broker.model.SuperOrderLeg;
 import com.tradingbot.trading_execution_engine.marketdata.model.InstrumentInfo;
 import com.tradingbot.trading_execution_engine.order.model.OrderSide;
 import com.tradingbot.trading_execution_engine.order.model.OrderType;
@@ -96,6 +101,8 @@ class DhanBrokerOrderServiceTest {
         assertThat(request.getCorrelationId()).startsWith("ORD-");
 
         assertThat(response.getBrokerOrderId()).isEqualTo("dhan-1");
+        assertThat(response.getSecurityId()).isEqualTo("2885");
+        assertThat(response.getExchangeSegment()).isEqualTo("NSE_EQ");
         assertThat(response.getStatus()).isEqualTo(BrokerOrderStatus.FILLED);
     }
 
@@ -143,6 +150,59 @@ class DhanBrokerOrderServiceTest {
         assertThat(request.getTriggerPrice()).isEqualTo(3900.0);
 
         assertThat(response.getBrokerOrderId()).isEqualTo("gtt-1");
+        assertThat(response.getSecurityId()).isEqualTo("11536");
+        assertThat(response.getExchangeSegment()).isEqualTo("NSE_EQ");
+        assertThat(response.getStatus()).isEqualTo(BrokerOrderStatus.PENDING);
+    }
+
+    @Test
+    void superOrderPostsEntryTargetStopLossAndTrailingJump() {
+        when(instrumentResolverService.resolve("INFY"))
+                .thenReturn(new InstrumentInfo("1594", "NSE_EQ", "EQUITY"));
+
+        DhanPlaceOrderResponse dhanResponse = new DhanPlaceOrderResponse();
+        dhanResponse.setOrderId("super-1");
+        dhanResponse.setOrderStatus("PENDING");
+
+        when(dhanBrokerClient.placeSuperOrder(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(dhanResponse);
+
+        OrderResponse response =
+                dhanBrokerOrderService.placeSuperOrder(
+                        SuperOrderRequest.builder()
+                                .symbol("INFY")
+                                .side(OrderSide.BUY)
+                                .entryOrderType(OrderType.LIMIT)
+                                .productType(BrokerProductType.CNC)
+                                .quantity(7)
+                                .price(1500.0)
+                                .targetPrice(1550.0)
+                                .stopLossPrice(1475.0)
+                                .trailingJump(7.5)
+                                .build()
+                );
+
+        ArgumentCaptor<DhanSuperOrderRequest> requestCaptor =
+                ArgumentCaptor.forClass(DhanSuperOrderRequest.class);
+        verify(dhanBrokerClient).placeSuperOrder(requestCaptor.capture());
+
+        DhanSuperOrderRequest request = requestCaptor.getValue();
+        assertThat(request.getDhanClientId()).isEqualTo("client-1");
+        assertThat(request.getCorrelationId()).startsWith("SUP-");
+        assertThat(request.getTransactionType()).isEqualTo("BUY");
+        assertThat(request.getExchangeSegment()).isEqualTo("NSE_EQ");
+        assertThat(request.getProductType()).isEqualTo("CNC");
+        assertThat(request.getOrderType()).isEqualTo("LIMIT");
+        assertThat(request.getSecurityId()).isEqualTo("1594");
+        assertThat(request.getQuantity()).isEqualTo(7);
+        assertThat(request.getPrice()).isEqualTo(1500.0);
+        assertThat(request.getTargetPrice()).isEqualTo(1550.0);
+        assertThat(request.getStopLossPrice()).isEqualTo(1475.0);
+        assertThat(request.getTrailingJump()).isEqualTo(7.5);
+
+        assertThat(response.getBrokerOrderId()).isEqualTo("super-1");
+        assertThat(response.getSecurityId()).isEqualTo("1594");
+        assertThat(response.getExchangeSegment()).isEqualTo("NSE_EQ");
         assertThat(response.getStatus()).isEqualTo(BrokerOrderStatus.PENDING);
     }
 
@@ -166,5 +226,27 @@ class DhanBrokerOrderServiceTest {
         assertThat(response.getFilledQuantity()).isEqualTo(2);
         assertThat(response.getAveragePrice()).isEqualTo(101.5);
         assertThat(response.getMessage()).isEqualTo("partial");
+    }
+
+    @Test
+    void cancelSuperOrderLegCallsDhanClientWithLegName() {
+        DhanPlaceOrderResponse dhanResponse = new DhanPlaceOrderResponse();
+        dhanResponse.setOrderId("super-1");
+        dhanResponse.setOrderStatus("CANCELLED");
+
+        when(dhanBrokerClient.cancelSuperOrderLeg(
+                "super-1",
+                "TARGET_LEG"
+        )).thenReturn(dhanResponse);
+
+        dhanBrokerOrderService.cancelSuperOrderLeg(
+                "super-1",
+                SuperOrderLeg.TARGET_LEG
+        );
+
+        verify(dhanBrokerClient).cancelSuperOrderLeg(
+                "super-1",
+                "TARGET_LEG"
+        );
     }
 }

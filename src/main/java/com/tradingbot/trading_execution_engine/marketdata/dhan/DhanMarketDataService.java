@@ -1,6 +1,6 @@
 package com.tradingbot.trading_execution_engine.marketdata.dhan;
 
-import com.tradingbot.trading_execution_engine.broker.dhan.DhanInstrumentResolverService;
+import com.tradingbot.trading_execution_engine.broker.dhan.service.DhanInstrumentResolverService;
 import com.tradingbot.trading_execution_engine.marketdata.dhan.dto.DhanIntradayRequest;
 import com.tradingbot.trading_execution_engine.marketdata.dhan.dto.DhanIntradayResponse;
 import com.tradingbot.trading_execution_engine.marketdata.model.Candle;

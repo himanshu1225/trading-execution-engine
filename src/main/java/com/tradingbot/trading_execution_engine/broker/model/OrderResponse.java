@@ -9,6 +9,10 @@ public class OrderResponse {
 
     private String brokerOrderId;
 
+    private String securityId;
+
+    private String exchangeSegment;
+
     private BrokerOrderStatus status;
 
     private String message;

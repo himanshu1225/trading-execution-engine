@@ -5,6 +5,8 @@ import com.tradingbot.trading_execution_engine.broker.model.OrderRequest;
 import com.tradingbot.trading_execution_engine.broker.model.OrderResponse;
 import com.tradingbot.trading_execution_engine.broker.model.OrderStatusResponse;
 import com.tradingbot.trading_execution_engine.broker.model.PersistentOrderRequest;
+import com.tradingbot.trading_execution_engine.broker.model.SuperOrderRequest;
+import com.tradingbot.trading_execution_engine.broker.model.SuperOrderLeg;
 import com.tradingbot.trading_execution_engine.broker.service.BrokerOrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
@@ -62,6 +64,32 @@ public class MockBrokerOrderService implements BrokerOrderService {
     }
 
     @Override
+    public OrderResponse placeSuperOrder(SuperOrderRequest request) {
+
+        String brokerOrderId =
+                "SUPER-" + UUID.randomUUID();
+
+        log.info(
+                "Mock super order placed id={}, symbol={}, entryType={}, product={}, qty={}, price={}, target={}, stopLoss={}, trailingJump={}",
+                brokerOrderId,
+                request.getSymbol(),
+                request.getEntryOrderType(),
+                request.getProductType(),
+                request.getQuantity(),
+                request.getPrice(),
+                request.getTargetPrice(),
+                request.getStopLossPrice(),
+                request.getTrailingJump()
+        );
+
+        return OrderResponse.builder()
+                .brokerOrderId(brokerOrderId)
+                .status(BrokerOrderStatus.PLACED)
+                .message("Mock super order placed")
+                .build();
+    }
+
+    @Override
     public OrderStatusResponse getOrderStatus(String brokerOrderId) {
 
         return OrderStatusResponse.builder()
@@ -74,5 +102,17 @@ public class MockBrokerOrderService implements BrokerOrderService {
     @Override
     public void cancelOrder(String brokerOrderId) {
         log.info("Mock broker order cancelled id={}", brokerOrderId);
+    }
+
+    @Override
+    public void cancelSuperOrderLeg(
+            String brokerOrderId,
+            SuperOrderLeg leg) {
+
+        log.info(
+                "Mock super order leg cancelled id={}, leg={}",
+                brokerOrderId,
+                leg
+        );
     }
 }

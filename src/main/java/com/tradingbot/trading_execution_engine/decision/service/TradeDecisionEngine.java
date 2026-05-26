@@ -2,6 +2,7 @@ package com.tradingbot.trading_execution_engine.decision.service;
 
 import com.tradingbot.trading_execution_engine.decision.model.PricePathAnalysis;
 import com.tradingbot.trading_execution_engine.decision.model.TradeDecision;
+import com.tradingbot.trading_execution_engine.decision.model.TradeTargetPlan;
 import com.tradingbot.trading_execution_engine.alert.dto.TradingViewAlert;
 import com.tradingbot.trading_execution_engine.order.model.OrderType;
 import com.tradingbot.trading_execution_engine.risk.service.RiskManagementService;
@@ -17,11 +18,20 @@ public class TradeDecisionEngine {
 
     private final PricePathAnalyzer pricePathAnalyzer;
     private final RiskManagementService riskManagementService;
+    private final TradeTargetService tradeTargetService;
 
     @Value("${trading.threshold-percent}")
     private Double thresholdPercent;
 
     public TradeDecision evaluate(TradingViewAlert alert) {
+
+        if (alert.getTradeScore() == null || alert.getTradeScore() < 5) {
+            return TradeDecision.builder()
+                    .valid(false)
+                    .actionType("REJECT")
+                    .decisionReason("TRADE_SCORE_BELOW_5")
+                    .build();
+        }
 
         PricePathAnalysis analysis =
                 pricePathAnalyzer.analyze(alert);
@@ -52,6 +62,16 @@ public class TradeDecisionEngine {
         // CASE 2 — better price available
         if (analysis.getCurrentPrice() <= entry) {
 
+            TradeTargetPlan targetPlan =
+                    calculateTargetPlan(
+                            analysis.getCurrentPrice(),
+                            stopLoss
+                    );
+
+            if (targetPlan == null) {
+                return reject("INVALID_RISK_REWARD");
+            }
+
             Integer qty =
                     riskManagementService.calculateQuantity(
                             analysis.getCurrentPrice(),
@@ -63,6 +83,12 @@ public class TradeDecisionEngine {
                     .actionType(OrderType.MARKET.name())
                     .actualEntryPrice(analysis.getCurrentPrice())
                     .quantity(qty)
+                    .riskPerShare(targetPlan.getRiskPerShare())
+                    .oneRPrice(targetPlan.getOneRPrice())
+                    .onePointFiveRPrice(targetPlan.getOnePointFiveRPrice())
+                    .twoRPrice(targetPlan.getTwoRPrice())
+                    .targetPrice(targetPlan.getTargetPrice())
+                    .trailingJump(targetPlan.getTrailingJump())
                     .decisionReason("BETTER_ENTRY")
                     .build();
         }
@@ -70,6 +96,16 @@ public class TradeDecisionEngine {
         // CASE 3 — fresh setup
         if (!analysis.isEntryTouched()) {
 
+            TradeTargetPlan targetPlan =
+                    calculateTargetPlan(
+                            entry,
+                            stopLoss
+                    );
+
+            if (targetPlan == null) {
+                return reject("INVALID_RISK_REWARD");
+            }
+
             Integer qty =
                     riskManagementService.calculateQuantity(
                             entry,
@@ -81,6 +117,12 @@ public class TradeDecisionEngine {
                     .actionType(OrderType.LIMIT.name())
                     .actualEntryPrice(entry)
                     .quantity(qty)
+                    .riskPerShare(targetPlan.getRiskPerShare())
+                    .oneRPrice(targetPlan.getOneRPrice())
+                    .onePointFiveRPrice(targetPlan.getOnePointFiveRPrice())
+                    .twoRPrice(targetPlan.getTwoRPrice())
+                    .targetPrice(targetPlan.getTargetPrice())
+                    .trailingJump(targetPlan.getTrailingJump())
                     .decisionReason("FRESH_SETUP")
                     .build();
         }
@@ -88,6 +130,16 @@ public class TradeDecisionEngine {
         // CASE 4 — threshold bounce
         if (analysis.getMaxBouncePercent() <= thresholdPercent) {
 
+            TradeTargetPlan targetPlan =
+                    calculateTargetPlan(
+                            entry,
+                            stopLoss
+                    );
+
+            if (targetPlan == null) {
+                return reject("INVALID_RISK_REWARD");
+            }
+
             Integer qty =
                     riskManagementService.calculateQuantity(
                             entry,
@@ -99,6 +151,12 @@ public class TradeDecisionEngine {
                     .actionType(OrderType.LIMIT.name())
                     .actualEntryPrice(entry)
                     .quantity(qty)
+                    .riskPerShare(targetPlan.getRiskPerShare())
+                    .oneRPrice(targetPlan.getOneRPrice())
+                    .onePointFiveRPrice(targetPlan.getOnePointFiveRPrice())
+                    .twoRPrice(targetPlan.getTwoRPrice())
+                    .targetPrice(targetPlan.getTargetPrice())
+                    .trailingJump(targetPlan.getTrailingJump())
                     .decisionReason("THRESHOLD_BOUNCE")
                     .build();
         }
@@ -109,5 +167,34 @@ public class TradeDecisionEngine {
                 .actionType("REJECT")
                 .decisionReason("STALE_MOVE")
                 .build();
+    }
+
+    private TradeDecision reject(String reason) {
+        return TradeDecision.builder()
+                .valid(false)
+                .actionType("REJECT")
+                .decisionReason(reason)
+                .build();
+    }
+
+    private TradeTargetPlan calculateTargetPlan(
+            Double entryPrice,
+            Double stopLossPrice) {
+
+        try {
+            return tradeTargetService.calculate(
+                    entryPrice,
+                    stopLossPrice
+            );
+
+        } catch (IllegalArgumentException e) {
+            log.warn(
+                    "Unable to calculate trade target plan for entry={}, stopLoss={}, reason={}",
+                    entryPrice,
+                    stopLossPrice,
+                    e.getMessage()
+            );
+            return null;
+        }
     }
 }

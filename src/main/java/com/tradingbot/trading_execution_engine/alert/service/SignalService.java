@@ -109,6 +109,30 @@ public class SignalService {
                 decision.getQuantity()
         );
 
+        signal.setRiskPerShare(
+                decision.getRiskPerShare()
+        );
+
+        signal.setOneRPrice(
+                decision.getOneRPrice()
+        );
+
+        signal.setOnePointFiveRPrice(
+                decision.getOnePointFiveRPrice()
+        );
+
+        signal.setTwoRPrice(
+                decision.getTwoRPrice()
+        );
+
+        signal.setTargetPrice(
+                decision.getTargetPrice()
+        );
+
+        signal.setTrailingJump(
+                decision.getTrailingJump()
+        );
+
         signal.setDecisionReason(
                 decision.getDecisionReason()
         );

@@ -1,4 +1,4 @@
-package com.tradingbot.trading_execution_engine.broker.dhan;
+package com.tradingbot.trading_execution_engine.broker.dhan.config;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;

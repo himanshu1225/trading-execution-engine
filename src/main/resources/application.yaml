@@ -15,6 +15,7 @@ trading:
   capital: 500000
   risk-percent: 1
   threshold-percent: 1
+  trailing-jump-percent: 0.5
 
 dhan:
   base-url: https://api.dhan.co/v2

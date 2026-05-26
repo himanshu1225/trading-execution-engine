@@ -5,15 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class TradeDecision {
-
-    private boolean valid;
-
-    private String actionType;
-
-    private Double actualEntryPrice;
-
-    private Integer quantity;
+public class TradeTargetPlan {
 
     private Double riskPerShare;
 
@@ -26,6 +18,4 @@ public class TradeDecision {
     private Double targetPrice;
 
     private Double trailingJump;
-
-    private String decisionReason;
 }

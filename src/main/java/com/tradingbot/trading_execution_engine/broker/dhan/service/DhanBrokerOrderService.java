@@ -1,15 +1,20 @@
-package com.tradingbot.trading_execution_engine.broker.dhan;
+package com.tradingbot.trading_execution_engine.broker.dhan.service;
 
+import com.tradingbot.trading_execution_engine.broker.dhan.client.DhanBrokerClient;
+import com.tradingbot.trading_execution_engine.broker.dhan.config.DhanBrokerProperties;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanForeverOrderRequest;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanOrderStatusResponse;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanPlaceOrderRequest;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanPlaceOrderResponse;
+import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanSuperOrderRequest;
 import com.tradingbot.trading_execution_engine.broker.model.BrokerOrderStatus;
 import com.tradingbot.trading_execution_engine.broker.model.BrokerProductType;
 import com.tradingbot.trading_execution_engine.broker.model.OrderRequest;
 import com.tradingbot.trading_execution_engine.broker.model.OrderResponse;
 import com.tradingbot.trading_execution_engine.broker.model.OrderStatusResponse;
 import com.tradingbot.trading_execution_engine.broker.model.PersistentOrderRequest;
+import com.tradingbot.trading_execution_engine.broker.model.SuperOrderRequest;
+import com.tradingbot.trading_execution_engine.broker.model.SuperOrderLeg;
 import com.tradingbot.trading_execution_engine.broker.service.BrokerOrderService;
 import com.tradingbot.trading_execution_engine.marketdata.model.InstrumentInfo;
 import com.tradingbot.trading_execution_engine.order.model.OrderType;
@@ -66,6 +71,8 @@ public class DhanBrokerOrderService implements BrokerOrderService {
 
         return OrderResponse.builder()
                 .brokerOrderId(dhanResponse.getOrderId())
+                .securityId(instrument.getSecurityId())
+                .exchangeSegment(instrument.getExchangeSegment())
                 .status(mapStatus(dhanResponse.getOrderStatus()))
                 .message(dhanResponse.getOrderStatus())
                 .build();
@@ -107,6 +114,51 @@ public class DhanBrokerOrderService implements BrokerOrderService {
 
         return OrderResponse.builder()
                 .brokerOrderId(dhanResponse.getOrderId())
+                .securityId(instrument.getSecurityId())
+                .exchangeSegment(instrument.getExchangeSegment())
+                .status(mapStatus(dhanResponse.getOrderStatus()))
+                .message(dhanResponse.getOrderStatus())
+                .build();
+    }
+
+    @Override
+    public OrderResponse placeSuperOrder(SuperOrderRequest request) {
+        InstrumentInfo instrument =
+                instrumentResolverService.resolve(request.getSymbol());
+
+        DhanSuperOrderRequest dhanRequest =
+                DhanSuperOrderRequest.builder()
+                        .dhanClientId(properties.getClientId())
+                        .correlationId(correlationId("SUP"))
+                        .transactionType(request.getSide().name())
+                        .exchangeSegment(instrument.getExchangeSegment())
+                        .productType(productTypeOrDefault(
+                                request.getProductType(),
+                                properties.getOrderProductType()
+                        ))
+                        .orderType(toDhanOrderType(request.getEntryOrderType()))
+                        .securityId(instrument.getSecurityId())
+                        .quantity(request.getQuantity())
+                        .price(priceOrZero(request.getEntryOrderType(), request.getPrice()))
+                        .targetPrice(request.getTargetPrice())
+                        .stopLossPrice(request.getStopLossPrice())
+                        .trailingJump(request.getTrailingJump())
+                        .build();
+
+        DhanPlaceOrderResponse dhanResponse =
+                dhanBrokerClient.placeSuperOrder(dhanRequest);
+
+        log.info(
+                "Dhan super order placed id={}, status={}, symbol={}",
+                dhanResponse.getOrderId(),
+                dhanResponse.getOrderStatus(),
+                request.getSymbol()
+        );
+
+        return OrderResponse.builder()
+                .brokerOrderId(dhanResponse.getOrderId())
+                .securityId(instrument.getSecurityId())
+                .exchangeSegment(instrument.getExchangeSegment())
                 .status(mapStatus(dhanResponse.getOrderStatus()))
                 .message(dhanResponse.getOrderStatus())
                 .build();
@@ -138,6 +190,25 @@ public class DhanBrokerOrderService implements BrokerOrderService {
         );
     }
 
+    @Override
+    public void cancelSuperOrderLeg(
+            String brokerOrderId,
+            SuperOrderLeg leg) {
+
+        DhanPlaceOrderResponse dhanResponse =
+                dhanBrokerClient.cancelSuperOrderLeg(
+                        brokerOrderId,
+                        leg.name()
+                );
+
+        log.info(
+                "Dhan super order leg cancel requested id={}, leg={}, status={}",
+                dhanResponse.getOrderId(),
+                leg,
+                dhanResponse.getOrderStatus()
+        );
+    }
+
     private String toDhanOrderType(OrderType orderType) {
         if (OrderType.MARKET.equals(orderType)) {
             return "MARKET";
@@ -147,11 +218,21 @@ public class DhanBrokerOrderService implements BrokerOrderService {
     }
 
     private Double priceOrZero(OrderRequest request) {
-        if (OrderType.MARKET.equals(request.getOrderType())) {
+        return priceOrZero(
+                request.getOrderType(),
+                request.getPrice()
+        );
+    }
+
+    private Double priceOrZero(
+            OrderType orderType,
+            Double price) {
+
+        if (OrderType.MARKET.equals(orderType)) {
             return 0.0;
         }
 
-        return request.getPrice();
+        return price;
     }
 
     private String productTypeOrDefault(

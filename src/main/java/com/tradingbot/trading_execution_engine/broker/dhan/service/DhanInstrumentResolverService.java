@@ -1,5 +1,6 @@
-package com.tradingbot.trading_execution_engine.broker.dhan;
+package com.tradingbot.trading_execution_engine.broker.dhan.service;
 
+import com.tradingbot.trading_execution_engine.broker.dhan.config.DhanBrokerProperties;
 import com.tradingbot.trading_execution_engine.marketdata.model.InstrumentInfo;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

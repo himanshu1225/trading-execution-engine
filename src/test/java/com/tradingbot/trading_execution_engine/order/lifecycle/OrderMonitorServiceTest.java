@@ -11,6 +11,7 @@ import com.tradingbot.trading_execution_engine.order.model.OrderType;
 import com.tradingbot.trading_execution_engine.order.model.SignalStatus;
 import com.tradingbot.trading_execution_engine.persistence.entity.Order;
 import com.tradingbot.trading_execution_engine.persistence.entity.Signal;
+import com.tradingbot.trading_execution_engine.persistence.repository.OrderLegRepository;
 import com.tradingbot.trading_execution_engine.persistence.repository.OrderRepository;
 import com.tradingbot.trading_execution_engine.persistence.repository.SignalRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,9 @@ class OrderMonitorServiceTest {
     @Mock
     private BrokerOrderService brokerOrderService;
 
+    @Mock
+    private OrderLegRepository orderLegRepository;
+
     private OrderMonitorService orderMonitorService;
 
     @BeforeEach
@@ -46,6 +50,7 @@ class OrderMonitorServiceTest {
                 new ExecutionService(
                         brokerOrderService,
                         orderRepository,
+                        orderLegRepository,
                         new ExecutionProductResolver()
                 );
         orderMonitorService =
@@ -63,6 +68,8 @@ class OrderMonitorServiceTest {
         signal.setSymbol("INFY");
         signal.setEntryPrice(1500.0);
         signal.setStopLossPrice(1475.0);
+        signal.setTargetPrice(1550.0);
+        signal.setTrailingJump(7.5);
         signal.setQuantity(100);
         signal.setStatus(SignalStatus.PENDING_LIMIT.name());
         signal.setTradeType("HIT");
@@ -104,6 +111,9 @@ class OrderMonitorServiceTest {
         assertThat(persistentOrder.getProductType()).isEqualTo("CNC");
         assertThat(persistentOrder.getOrderStatus()).isEqualTo(OrderStatus.FOREVER_ACTIVE.name());
         assertThat(persistentOrder.getOrderPrice()).isEqualTo(1500.0);
+        assertThat(persistentOrder.getStopLossPrice()).isEqualTo(1475.0);
+        assertThat(persistentOrder.getTargetPrice()).isEqualTo(1550.0);
+        assertThat(persistentOrder.getTrailingJump()).isEqualTo(7.5);
         assertThat(persistentOrder.getQuantity()).isEqualTo(100);
         assertThat(persistentOrder.getSignal()).isSameAs(signal);
 

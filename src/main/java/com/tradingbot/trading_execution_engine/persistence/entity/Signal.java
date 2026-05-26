@@ -42,6 +42,18 @@ public class Signal {
 
     private Integer quantity;
 
+    private Double riskPerShare;
+
+    private Double oneRPrice;
+
+    private Double onePointFiveRPrice;
+
+    private Double twoRPrice;
+
+    private Double targetPrice;
+
+    private Double trailingJump;
+
     private String decisionReason;
 
     private String status;

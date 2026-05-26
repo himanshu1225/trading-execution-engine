@@ -1,10 +1,12 @@
 package com.tradingbot.trading_execution_engine.broker.dhan.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class DhanSuperOrderRequest {
 
     private String dhanClientId;

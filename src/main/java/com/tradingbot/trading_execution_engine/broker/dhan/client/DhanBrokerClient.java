@@ -1,9 +1,11 @@
-package com.tradingbot.trading_execution_engine.broker.dhan;
+package com.tradingbot.trading_execution_engine.broker.dhan.client;
 
+import com.tradingbot.trading_execution_engine.broker.dhan.config.DhanBrokerProperties;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanForeverOrderRequest;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanOrderStatusResponse;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanPlaceOrderRequest;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanPlaceOrderResponse;
+import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanPositionResponse;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanSuperOrderModifyRequest;
 import com.tradingbot.trading_execution_engine.broker.dhan.dto.DhanSuperOrderRequest;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
 
 @Component
 @Profile("dhan")
@@ -124,6 +128,23 @@ public class DhanBrokerClient {
                 restTemplate.exchange(entity, DhanPlaceOrderResponse.class);
 
         return response.getBody();
+    }
+
+    public List<DhanPositionResponse> getPositions() {
+        RequestEntity<Void> entity =
+                RequestEntity
+                        .get(uri("/positions"))
+                        .headers(this::applyHeaders)
+                        .build();
+
+        ResponseEntity<DhanPositionResponse[]> response =
+                restTemplate.exchange(entity, DhanPositionResponse[].class);
+
+        if (response.getBody() == null) {
+            return List.of();
+        }
+
+        return Arrays.asList(response.getBody());
     }
 
     private URI uri(String path) {
